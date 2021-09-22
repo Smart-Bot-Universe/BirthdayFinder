@@ -3,14 +3,16 @@ package edu.kentlake.computerscience.application;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 
 import edu.kentlake.computerscience.database.DataStructure;
 import edu.kentlake.computerscience.database.Database;
+import edu.kentlake.computerscience.database.filestorage.FileDataType;
 import edu.kentlake.computerscience.utilities.Utils;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Menu;
@@ -18,6 +20,10 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -27,6 +33,8 @@ import javafx.stage.Stage;
  * @author Ruvim Slyusar
  */
 public class App extends Application {
+	
+	Database database;
 	
 	//Application
 	VBox root;
@@ -47,26 +55,66 @@ public class App extends Application {
 	Menu add;
 	MenuItem dataFormat;
 	
-	HashMap<DataStructure, String> formats = new HashMap<>();
+	EventHandlerStorage eventHandler;
 	
-	EventHandler<ActionEvent> event = new EventHandler<ActionEvent>() {
-
-		@Override
-		public void handle(ActionEvent event) {
-			String id = event.getSource().toString();
-			id = id.substring(id.indexOf('\'') + 1, id.length() - 1);
-			
-			try {
-				text.setText(Utils.fileToString(new File("files/" + id)));
-			}catch(IOException e) {
-				e.printStackTrace();
-			}
-		}};
-	
-	public static void main(String[] args) {
-		new Database(new File("files"));
+	HashMap<String, DataStructure> formats = new HashMap<>();
 		
-		launch(args);
+	public App() {
+		init();
+	}
+	
+	public void init() {
+		database = new Database(new File("files"));
+		initEvents();
+	}
+	
+	public void initEvents() {
+		eventHandler = new EventHandlerStorage();
+		
+		eventHandler.put(EventHandlerStorage.OPEN_FILE, new EventHandler<ActionEvent>() {			
+			@Override
+			public void handle(ActionEvent event) {
+				String id = event.getSource().toString();
+				id = id.substring(id.indexOf('\'') + 1, id.length() - 1);				
+				text.setText(database.getFileData(id, FileDataType.PRETTY_FILE));		
+			}});
+		eventHandler.put(EventHandlerStorage.MAKE_FOLDER, new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				Stage dialog = new Stage();
+				VBox dialogVBox = new VBox(20);
+				Text text = new Text("Testing");
+				TextField userTextField = new TextField();
+				userTextField.setOnKeyPressed(new EventHandler<KeyEvent>() {
+					@Override
+					public void handle(KeyEvent keyEvent) { 
+						if(keyEvent.getCode() == KeyCode.ENTER) 
+							Utils.makeFolder(new File(userTextField.getText())); 
+					}});
+				
+				dialogVBox.setAlignment(Pos.TOP_CENTER);
+				VBox.setMargin(text, new Insets(40, 0, 0, 0));
+				VBox.setMargin(userTextField, new Insets(20, 40, 100, 40));
+				dialogVBox.getChildren().addAll(text, userTextField);
+				
+				dialog.setScene(new Scene(dialogVBox, 400, 200));
+				dialog.show();
+			}});
+	}
+	
+	public Button[] createButtonArray(File file) throws IOException {
+		String[] fileNames = Utils.fileToString(file).split("\n");
+		Button[] buttons = new Button[fileNames.length + 1];
+		for(int i = 0;i < fileNames.length;i++) {
+			buttons[i] = new Button(fileNames[i]);
+			buttons[i].setOnAction(eventHandler.get(EventHandlerStorage.OPEN_FILE));
+		}
+		try {
+			buttons[buttons.length - 1] = new Button("combinedFiles.txt");
+			buttons[buttons.length - 1].setOnAction(eventHandler.get(EventHandlerStorage.OPEN_FILE));
+		}catch(Exception e) {
+		}
+		return buttons;
 	}
 	
 	@Override
@@ -100,9 +148,8 @@ public class App extends Application {
 				
 				_new = new Menu("New"); // {
 					sub_new_folder = new MenuItem("Folder");
-					sub_new_folder.setOnAction(e -> {
-						//Creates a new a folder inside of the sourceFolder
-					});
+					sub_new_folder.setOnAction(eventHandler.get(EventHandlerStorage.MAKE_FOLDER));
+					
 					_new.getItems().add(sub_new_folder);
 				// }
 				_import = new MenuItem("Import");
@@ -134,20 +181,5 @@ public class App extends Application {
 		
 		primaryStage.setScene(scene);
 		primaryStage.show();
-	}
-
-	public Button[] createButtonArray(File file) throws IOException {
-		String[] fileNames = Utils.fileToString(file).split("\n");
-		Button[] buttons = new Button[fileNames.length + 1];
-		for(int i = 0;i < fileNames.length;i++) {
-			buttons[i] = new Button(fileNames[i]);
-			buttons[i].setOnAction(event);
-		}
-		try {
-			buttons[buttons.length - 1] = new Button("combinedFiles.txt");
-			buttons[buttons.length - 1].setOnAction(event);
-		}catch(Exception e) {
-		}
-		return buttons;
 	}
 }

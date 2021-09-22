@@ -77,6 +77,11 @@ public class Utils {
 		fos.close();
 	}
 	
+	public static boolean makeFolder(File dir) {
+		if(dir.exists()) return true;
+		else return dir.mkdir();
+	}
+	
 	/**
 	 * @author Ruvim Slyusar 
 	 */
@@ -124,7 +129,7 @@ public class Utils {
 	}
 	
 	/**
-	 * @author Ruvim Slyusar 
+	 * @author Ruvim Slyusar
 	 */
 	public static void addFileToList(File file) {
 		

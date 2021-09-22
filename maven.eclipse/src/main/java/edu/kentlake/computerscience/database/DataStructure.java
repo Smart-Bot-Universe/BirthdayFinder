@@ -13,9 +13,19 @@ import java.util.Objects;
 public class DataStructure {
 
 	String fileFormat;
+	boolean isSelected;
 	
 	public DataStructure() {
-		this.getClass().hashCode();
+		
+	}
+	
+	public DataStructure(String fileFormat) {
+		this.fileFormat = fileFormat;
+		isSelected = false;
+	}
+	
+	public void setSelected(boolean isSelected) {
+		this.isSelected = isSelected;
 	}
 	
 	@Override
