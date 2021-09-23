@@ -6,26 +6,25 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 
  * @author Ruvim Slyusar
+ * 
+ * 	As in the name, this class is used for various different methods with most of them having to do something with files.
+ *
  */
-
 public class Utils {
 	
-	/**
-	 * @author Ruvim Slyusar 
-	 */
 	public static void fileToString(String file) throws IOException {
 		fileToString(new File(file));
 	}
 	
 	/**
-	 * @author Ruvim Slyusar
-	 * 
 	 * Converts the file into a String
 	 */
 	public static String fileToString(File file) throws IOException {
@@ -40,16 +39,10 @@ public class Utils {
 		return sb.toString();
 	}
 	
-	/**
-	 * @author Ruvim Slyusar
-	 */
 	public static void writeStringToFile(String[] data, String location) throws IOException {
 		writeStringToFile(data, new File(location));
 	}
 	
-	/**
-	 * @author Ruvim Slyusar 
-	 */
 	public static void writeStringToFile(String[] data, File location) throws IOException {
 		String combined = "";
 		for(String s : data) {
@@ -59,8 +52,6 @@ public class Utils {
 	}
 	
 	/**
-	 * @author Ruvim Slyusar
-	 * 
 	 *  Writes the string onto a file and makes the file where you specified
 	 *  
 	 *  @param location : location to where file is written too
@@ -82,9 +73,6 @@ public class Utils {
 		else return dir.mkdir();
 	}
 	
-	/**
-	 * @author Ruvim Slyusar 
-	 */
 	public static String convertStringToJson(String data, String objectName, String[] variableNames) {
 		String json = "{";
 		
@@ -108,30 +96,40 @@ public class Utils {
 		return json;
 	}
 	
-	/**
-	 * @author Ruvim Slyusar 
-	 */
-	public static void makeJson(Class<?> mainClass) {
-		String[][] hierarchyInNames = getHierarchyInNames(mainClass);
-	}
-	
-	/**
-	 * @author Ruvim Slyusar 
-	 */
-	private static String[][] getHierarchyInNames(Class<?> clas) {
-		List<String[]> hierarchyNames = new ArrayList<>();
-		
-		for(Field field : clas.getDeclaredFields()) {
-			System.out.println(field.getName());
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * @author Ruvim Slyusar
-	 */
 	public static void addFileToList(File file) {
 		
+	}
+	
+	/**
+	 * @param directory.
+	 * @return A String with all the files (including folders and/or subfolders) that are separated by comas.
+	 */
+	public static String listEvrythingInDir(File dir) {
+		String fileDirs = "";
+		fileDirs += dir + ",";
+		for(File child : dir.listFiles()) {
+			if(child.isDirectory()) {
+				fileDirs += listFilesInDir(dir) + ",";
+			}else if(child.isFile()) {
+				fileDirs += child + ",";
+			}
+		}
+		return fileDirs;
+	}
+	
+	/**
+	 * @param directory.
+	 * @return A String with all the files (not folders and/or subfolders) that are separated by comas.
+	 */
+	public static String listFilesInDir(File dir) {
+		String fileDirs = "";
+		for(File child : dir.listFiles()) {
+			if(child.isDirectory()) {
+				fileDirs += listFilesInDir(dir) + ",";
+			}else if(child.isFile()) {
+				fileDirs += child + ",";
+			}
+		}
+		return fileDirs;
 	}
 }

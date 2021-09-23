@@ -28,6 +28,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 /**
  * @author Ruvim Slyusar
@@ -64,7 +65,7 @@ public class App extends Application {
 	}
 	
 	public void init() {
-		database = new Database(new File("files"));
+		database = new Database();
 		initEvents();
 	}
 	
@@ -88,9 +89,10 @@ public class App extends Application {
 				userTextField.setOnKeyPressed(new EventHandler<KeyEvent>() {
 					@Override
 					public void handle(KeyEvent keyEvent) { 
-						if(keyEvent.getCode() == KeyCode.ENTER) 
-							Utils.makeFolder(new File(userTextField.getText())); 
-					}});
+						if(keyEvent.getCode() == KeyCode.ENTER) {
+							Utils.makeFolder(new File(Database.USER_FILES_DIR + "/" + userTextField.getText()));
+							dialog.close();
+						}}});
 				
 				dialogVBox.setAlignment(Pos.TOP_CENTER);
 				VBox.setMargin(text, new Insets(40, 0, 0, 0));
@@ -99,6 +101,11 @@ public class App extends Application {
 				
 				dialog.setScene(new Scene(dialogVBox, 400, 200));
 				dialog.show();
+			}});
+		eventHandler.put("Import", new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				Utils.addFileToList(new FileChooser().showOpenDialog(new Stage()));
 			}});
 	}
 	
@@ -132,7 +139,7 @@ public class App extends Application {
 		//ScrollPane to where you'll see all your files
 		fileViewScroll = new ScrollPane();
 		VBox box = new VBox();
-		Button[] files = createButtonArray(new File("configuration/filesInSourceFolder.txt"));	
+		Button[] files = createButtonArray(new File(Database.CONFIG_DIR + "/filesInUserFiles.txt"));	
 		box.getChildren().addAll(files);
 		fileViewScroll.setContent(box);
 		
@@ -153,24 +160,16 @@ public class App extends Application {
 					_new.getItems().add(sub_new_folder);
 				// }
 				_import = new MenuItem("Import");
-				_import.setOnAction(e -> {
-					Utils.addFileToList(new FileChooser().showOpenDialog(primaryStage));
-				});
+				_import.setOnAction(eventHandler.get(EventHandlerStorage.IMPORT));
+				
 				_export = new MenuItem("Export");
-				_export.setOnAction(e -> {
-					//Exports the selected folder to somewhere
-				});
+//				_export.setOnAction();
 			file.getItems().addAll(_new, _import, _export);
 			// }
 			add = new Menu("Add"); // {
 				
 				dataFormat = new MenuItem("dataFormat");
-				dataFormat.setOnAction(new EventHandler<ActionEvent>() {
-
-					@Override
-					public void handle(ActionEvent event) {
-						
-					}});
+//				dataFormat.setOnAction();
 				
 			add.getItems().addAll(dataFormat);
 			// }

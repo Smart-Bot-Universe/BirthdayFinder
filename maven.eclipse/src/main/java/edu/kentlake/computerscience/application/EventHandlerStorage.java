@@ -9,6 +9,8 @@ import javafx.event.EventHandler;
 public class EventHandlerStorage {
 	public static final String OPEN_FILE = "OpenFile";
 	public static final String MAKE_FOLDER = "MakeFolder";
+	public static final String IMPORT = "Import";
+	public static final String EXPORT = "Export";
 
 	private Map<String, EventHandler<ActionEvent>> storage;
 	

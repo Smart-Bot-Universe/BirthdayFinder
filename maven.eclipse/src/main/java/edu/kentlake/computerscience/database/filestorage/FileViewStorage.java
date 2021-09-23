@@ -7,9 +7,9 @@ import java.util.Map;
  * 
  * @author Ruvim Slyusar
  *
- * This class is made for only the viewing part of a file that the user will see
- * For example for memory storage reasoning the file which is in json format will be all written onto one line which doesn't look pretty.
- * which this class is used to store the pretty version of a json file.
+ *	This class is used to store the file directory and the FileDataType for each file.
+ *						HashMap<fileDirectory, FileDataType>();
+ *
  */
 public class FileViewStorage {
 
@@ -19,15 +19,19 @@ public class FileViewStorage {
 		fileViewStorage = new HashMap<>();
 	}
 	
-	public void addFileData(String fileName, FileDataType fileDataAndType) {
+	public void put(String fileName, FileDataType fileDataAndType) {
 		fileViewStorage.put(fileName, fileDataAndType);
 	}
 	
-	public void removeFileData(String fileName) {
-		fileViewStorage.remove(fileName);
+	public void putAll(Map<String, FileDataType> files) {
+		fileViewStorage.putAll(files);
 	}
 	
-	public FileDataType getFileData(String fileName) {
-		return fileViewStorage.get(fileName);
+	public void removeFileData(String fileDir) {
+		fileViewStorage.remove(fileDir);
+	}
+	
+	public FileDataType get(String fileDir) {
+		return fileViewStorage.get(fileDir);
 	}
 }

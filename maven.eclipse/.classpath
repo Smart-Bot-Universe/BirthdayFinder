@@ -35,7 +35,5 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="files"/>
-	<classpathentry kind="lib" path="configuration"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
