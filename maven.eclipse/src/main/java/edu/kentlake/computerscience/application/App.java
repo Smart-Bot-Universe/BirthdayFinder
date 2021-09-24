@@ -13,8 +13,10 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -24,6 +26,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
@@ -59,11 +62,8 @@ public class App extends Application {
 	EventHandlerStorage eventHandler;
 	
 	HashMap<String, DataStructure> formats = new HashMap<>();
-		
-	public App() {
-		init();
-	}
 	
+	// Lol JavaFX calls this method... man it was doing everything twice for a while
 	public void init() {
 		database = new Database();
 		initEvents();
@@ -75,8 +75,8 @@ public class App extends Application {
 		eventHandler.put(EventHandlerStorage.OPEN_FILE, new EventHandler<ActionEvent>() {			
 			@Override
 			public void handle(ActionEvent event) {
-				String id = event.getSource().toString();
-				id = id.substring(id.indexOf('\'') + 1, id.length() - 1);				
+				final Node source = (Node) event.getSource();
+				String id = source.getId();			
 				text.setText(database.getFileData(id, FileDataType.PRETTY_FILE));		
 			}});
 		eventHandler.put(EventHandlerStorage.MAKE_FOLDER, new EventHandler<ActionEvent>() {
@@ -109,17 +109,20 @@ public class App extends Application {
 			}});
 	}
 	
-	public Button[] createButtonArray(File file) throws IOException {
-		String[] fileNames = Utils.fileToString(file).split("\n");
-		Button[] buttons = new Button[fileNames.length + 1];
+	public Button[] createButtonsArray(String commaSeparatedDirs) throws IOException {
+		String[] dirs = commaSeparatedDirs.split(",");
+		String[] fileNames = new String[fileDirs.length];
+		for(int i = 0;i < fileDirs.length;i++) { fileNames[i] = new File(fileDirs[i]).getName(); }
+		
+		Pane[] buttons = new Pane[fileNames.length];
 		for(int i = 0;i < fileNames.length;i++) {
-			buttons[i] = new Button(fileNames[i]);
+			Pane undecoratedButton = new Pane();
+			undecoratedButton.setStyle("-fx-background-color: gray;");
+			undecoratedButton.setPrefSize(100, 30);
+			Label label = new Label(fileNames[i]);
+			label.setId(fileDirs[i]);
+			
 			buttons[i].setOnAction(eventHandler.get(EventHandlerStorage.OPEN_FILE));
-		}
-		try {
-			buttons[buttons.length - 1] = new Button("combinedFiles.txt");
-			buttons[buttons.length - 1].setOnAction(eventHandler.get(EventHandlerStorage.OPEN_FILE));
-		}catch(Exception e) {
 		}
 		return buttons;
 	}
@@ -139,7 +142,7 @@ public class App extends Application {
 		//ScrollPane to where you'll see all your files
 		fileViewScroll = new ScrollPane();
 		VBox box = new VBox();
-		Button[] files = createButtonArray(new File(Database.CONFIG_DIR + "/filesInUserFiles.txt"));	
+		Button[] files = createButtonsArray(Utils.listDirs(new File(Database.USER_FILES_DIR))));	
 		box.getChildren().addAll(files);
 		fileViewScroll.setContent(box);
 		

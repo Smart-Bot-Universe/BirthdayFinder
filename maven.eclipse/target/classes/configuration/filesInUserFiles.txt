@@ -1,3 +1,1 @@
-lol.txt
-rlly.csv
-wow.txt
+src\main\resources\UserFiles\combinedFiles.txt,src\main\resources\UserFiles\UserMadeFile#1\combinedFiles.txt,src\main\resources\UserFiles\UserMadeFile#1\lol.txt,src\main\resources\UserFiles\UserMadeFile#1\rlly.csv,src\main\resources\UserFiles\UserMadeFile#1\wow.txt,

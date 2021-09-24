@@ -46,7 +46,6 @@ public class FileContentSplitter {
 	}
 	
 	/**
-	 * 
 	 * @return the file splitted by what the user desired
 	 */
 	public String[] splitContent(int line) {
@@ -63,35 +62,52 @@ public class FileContentSplitter {
 	}
 	
 	/**
-	 * When you do String.split(); you lose the thing you asked to split by... Sometimes you don't want that, sometimes you do. 
+	 * When you do String.split(); you lose the thing you asked to split by... Sometimes you don't want that, sometimes you do.
+	 * 
+	 * @return the file splitted by what the user desired... And yes you can call this rather than splitContent(int line)... JK its private
 	 */
 	private String[] useContentLossType(int line, int amountOfSplits) {
 		String[] content = new String[amountOfSplits + 1];
 		for(int i = 0;i < content.length;i++) content[i] = "";
 		int counter = 0;
-		int splitCounter = 0;
+		int splitCounter = 1;
 		
 		switch(contentLossType) {
 		case FileContentSplitter.SPLIT_LINE_CONTENT_LOSS:
 			for(int i = 0;i < fileContent.length;i++) {
-				splitCounter++;
+				if(amountOfSplits == 0) { content[content.length - 1] = combinePartOfArray(fileContent, i, fileContent.length); break; }
 				if(splitCounter == line) {
-					content[counter] = content[counter].substring(0, content[counter].length() - 1);
-					counter++;
-					splitCounter = 0;
-					continue;
+					if(content[counter].endsWith("\n")) content[counter] = content[counter].substring(0, content[counter].length() - 1);
+					counter++; splitCounter = 1; amountOfSplits--; continue;
 				}
 				content[counter] += fileContent[i] + "\n";
+				splitCounter++;
 			}
 			return content;
 		case FileContentSplitter.NO_CONTENT_LOSS:
 			for(int i = 0;i < fileContent.length;i++) {
-				splitCounter++;
+				if(amountOfSplits == 0) { content[content.length - 1] = combinePartOfArray(fileContent, i, fileContent.length); break; }
 				content[counter] += fileContent[i];
-				if(splitCounter == line) { counter++; splitCounter = 0; continue; }else content[counter] += "\n";
+				if(splitCounter == line) { counter++; splitCounter = 1; amountOfSplits--; continue; }else content[counter] += "\n";
+				splitCounter++; 
 			}
 			return content;
 			default: throw new NullPointerException("Not an available contentLossType.");
 		}
+	}
+	
+	/**
+	 * This method is used to combine part of an array... Like l0l, what did you expect?
+	 * 
+	 * @return A string that combined the part of the array being asked to
+	 */
+	private String combinePartOfArray(String[] arr, int start, int end) {
+		if(end > arr.length) throw new ArrayIndexOutOfBoundsException("end > arr.length");
+		String combined = "";
+		for(int i = start;i < end;i++) {
+			combined += arr[i];
+			if(i != arr.length - 1) combined += "\n";
+		}
+		return combined;
 	}
 }

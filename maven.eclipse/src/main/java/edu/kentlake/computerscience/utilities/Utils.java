@@ -100,11 +100,15 @@ public class Utils {
 		
 	}
 	
+	public static String getFileName(String fileName) {
+		return new File(fileName).getName();
+	}
+	
 	/**
 	 * @param directory.
 	 * @return A String with all the files (including folders and/or subfolders) that are separated by comas.
 	 */
-	public static String listEvrythingInDir(File dir) {
+	public static String listEverythingInDir(File dir) {
 		String fileDirs = "";
 		fileDirs += dir + ",";
 		for(File child : dir.listFiles()) {
@@ -118,18 +122,44 @@ public class Utils {
 	}
 	
 	/**
+	 * 
+	 * @return A String containing all the files (not folders) inside of a directory separated by comas.
+	 */
+	public static String listFilesInDir(File dir) {
+		String filesInDir = "";
+		for(File child : dir.listFiles()) {
+			if(child.isFile()) filesInDir += child + ",";
+		}
+		return filesInDir;
+//		return (filesInDir.endsWith(",")) ? filesInDir.substring(0, filesInDir.length() - 1) : filesInDir;
+	}
+	
+	/**
 	 * @param directory.
 	 * @return A String with all the files (not folders and/or subfolders) that are separated by comas.
 	 */
-	public static String listFilesInDir(File dir) {
-		String fileDirs = "";
+	public static String listFiles(File dir) {
+		String files = "";
 		for(File child : dir.listFiles()) {
 			if(child.isDirectory()) {
-				fileDirs += listFilesInDir(dir) + ",";
+				files += listFiles(child);
 			}else if(child.isFile()) {
-				fileDirs += child + ",";
+				files += child + ",";
 			}
 		}
-		return fileDirs;
+		return files;
+//		return (files.endsWith(",")) ? files.substring(0, files.length() - 1) : files;
+	}
+	
+	/**
+	 * @return A String with all the directories (including itself) separated by comas.
+	 */
+	public static String listDirs(File dir) {
+		String dirs = (dir.isDirectory()) ? dir.getPath() + "," : "";
+		for(File child : dir.listFiles()) {
+			if(child.isDirectory()) dirs += listDirs(child);
+		}
+		return dirs;
+//		return (dirs.endsWith(",")) ? dirs.substring(0, dirs.length() - 1) : dirs;
 	}
 }

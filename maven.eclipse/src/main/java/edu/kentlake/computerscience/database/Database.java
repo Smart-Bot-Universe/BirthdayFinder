@@ -20,20 +20,26 @@ import edu.kentlake.computerscience.utilities.Utils;
  */
 public class Database {
 	public static final String RESOURCES_DIR = "src/main/resources";
-	public static final String USER_FILES_DIR = RESOURCES_DIR + "UserFiles";
-	public static final String CONFIG_DIR = RESOURCES_DIR + "configuration";
+	public static final String USER_FILES_DIR = RESOURCES_DIR + "/UserFiles";
+	public static final String CONFIG_DIR = RESOURCES_DIR + "/configuration";
 	
 	List<Student> students;
 	
 	private FileViewStorage fileViewStorage;
 	
+	// List of all the files directory from the previous time this program runned.
+	private String fileList;
+	
 	public Database() {
-		students = new ArrayList<>();
-		
 		try {
-			fileViewStorage = new Gson().fromJson(Utils.fileToString(new File(CONFIG_DIR + "/fileViewStorage.json")), FileViewStorage.class);
+			students = new ArrayList<>();
+			fileList = Utils.fileToString(new File(CONFIG_DIR + "/filesInUserFiles.txt"));
 			
-			if(checkForChangesInDir(new File(USER_FILES_DIR), new File(CONFIG_DIR + "/filesInUserFiles.txt"))) { restoreDatabase(); }
+//			fileViewStorage = new Gson().fromJson(Utils.fileToString(new File(CONFIG_DIR + "/fileViewStorage.json")), FileViewStorage.class);
+			fileViewStorage = new FileViewStorage();
+			
+			restoreDatabase();
+//			if(checkForChangesInDir(new File(USER_FILES_DIR))) { restoreDatabase(); }
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -44,45 +50,51 @@ public class Database {
 	 * 
 	 * @throws IOException
 	 */
-	@Deprecated
 	private void restoreDatabase() throws IOException {
 		updateFileList(new File(USER_FILES_DIR));
 		readAllFilesAndStore(new File(USER_FILES_DIR));
 		
 		ObjectCreation ob = new ObjectCreation();
-		ob.setDataStructure("last, first_MI, birthDate"); // Hardcoded :( and will be until I figure out in-memory java compiler
+		ob.setDataStructure("last, first_MI, birthDate"); // Hard coded :( and will be until I figure out in-memory java compiler
 		
 		String ultimateJson = "";
 		String prettyUltimateJson = "";
 		
-		String[] allUserFilesDirs = getFileList().split(",");
-		for(int i = 0;i < allUserFilesDirs.length;i++) {
-			String fileData = fileViewStorage.get(allUserFilesDirs[i]).get(FileDataType.REAL_FILE);
-			FileContentSplitter fcp = new FileContentSplitter(fileData);
-			String[] fileContent = fcp.splitContent(7);
-			fileContent[1] = fileContent[1].replaceAll("\"", "");
+		String[] allDirsInUserFiles = Utils.listDirs(new File(USER_FILES_DIR)).split(",");
+		for(int i = 0;i < allDirsInUserFiles.length;i++) { // Dir
+			String[] filesInDir = Utils.listFilesInDir(new File(allDirsInUserFiles[i])).split(",");
 			
-			int period = Integer.parseInt(fileContent[0].substring(fileContent[0].indexOf("Period: ") + 8, fileContent[0].indexOf("Period: ") + 9));
-			
-			for(String singleObjectData : fileContent[0].split("\n")) { // Creates an object Student for every student in one file (classroom) at a time
-				if(singleObjectData.isBlank()) continue;
-				students.add(ob.createObject(singleObjectData, Student.class));
+			for(int n = 0;n < filesInDir.length;n++) { // Files in Dir
+				if(filesInDir[n].isBlank()) continue; if(isIllegalFileName(Utils.getFileName(filesInDir[n]))) continue;
+				
+				String fileData = fileViewStorage.get(filesInDir[n]).get(FileDataType.REAL_FILE);
+				FileContentSplitter fcp = new FileContentSplitter(fileData);
+				String[] fileContent = fcp.splitContent(7);
+				fileContent[1] = fileContent[1].replaceAll("\"", "");
+				
+				// Hard coded in the sense that not every file has a "Period: "
+				int period = Integer.parseInt(fileContent[0].substring(fileContent[0].indexOf("Period: ") + 8, fileContent[0].indexOf("Period: ") + 9));
+				
+				for(String singleObjectData : fileContent[1].split("\n")) { // Creates an object Student for every student in one file (classroom) at a time
+					if(singleObjectData.isBlank()) continue;
+					students.add(ob.createObject(singleObjectData, Student.class));
+				}
+				
+				GsonBuilder gb = new GsonBuilder();
+				Classroom classroom = new Classroom(students, period);
+				
+				ultimateJson += gb.create().toJson(classroom) + "\n";	
+				gb.setPrettyPrinting();
+				prettyUltimateJson += gb.create().toJson(classroom) + "\n";
+				students.removeAll(students);
 			}
+			FileDataType fileDataType = new FileDataType();
+			fileDataType.put(FileDataType.REAL_FILE, ultimateJson);
+			fileDataType.put(FileDataType.PRETTY_FILE, prettyUltimateJson);
 			
-			GsonBuilder gb = new GsonBuilder();
-			Classroom classroom = new Classroom(students, period);
-			
-			ultimateJson += gb.create().toJson(classroom) + "\n";	
-			gb.setPrettyPrinting();
-			prettyUltimateJson += gb.create().toJson(classroom) + "\n";
-			students.removeAll(students);
+			fileViewStorage.put(new File(allDirsInUserFiles[i] + "/combinedFiles.txt").getPath(), fileDataType);
+			Utils.writeStringToFile(fileDataType.get(FileDataType.REAL_FILE), new File(allDirsInUserFiles[i] + "/combinedFiles.txt"));
 		}
-		
-		FileDataType fileDataType = new FileDataType();
-		fileDataType.put(FileDataType.REAL_FILE, ultimateJson);
-		fileDataType.put(FileDataType.PRETTY_FILE, prettyUltimateJson);
-		
-		fileViewStorage.addFileData("combinedFiles.txt", fileDataType);
 		Utils.writeStringToFile(new Gson().toJson(fileViewStorage), new File(CONFIG_DIR + "/fileViewStorage.json"));
 	}
 
@@ -94,27 +106,19 @@ public class Database {
 	 * @throws IOException
 	 */
 	private void readAllFilesAndStore(File dir) throws IOException {
-		String[] fileDirs = getFileList().split(",");
+		String[] fileDirs = fileList.split(",");
 		
 		for(int i = 0;i < fileDirs.length;i++) {
+			if(fileDirs[i].isBlank()) continue;
+			if(isIllegalFileName(Utils.getFileName(fileDirs[i]))) continue;
+			
 			String fileData = Utils.fileToString(new File(fileDirs[i]));
-			FileDataType fdt = new FileDataType();
-
+			FileDataType fdt;
+//			try { fdt = fileViewStorage.get(fileDirs[i]); }catch(Exception e) { fdt = new FileDataType(); } // To not overwrite // Idk if it works
+			fdt = new FileDataType();
 			fdt.put(FileDataType.REAL_FILE, fileData);
 			fileViewStorage.put(fileDirs[i], fdt);
 		}
-	}
-	
-	/**
-	 * @param data
-	 * @param line where to split the data
-	 * @return String[0] is the data and String[1] is the leftovers
-	 */
-	private String[] sortData(String data, int line) {
-		String[] oneStringForEachLine = data.split("\n");
-		String[] splittedByLine = data.split(oneStringForEachLine[line]);
-		
-		return new String[] {splittedByLine[1], splittedByLine[0]};
 	}
 	
 	/**
@@ -123,12 +127,29 @@ public class Database {
 	 * @throws IOException 
 	 */
 	private void updateFileList(File dir) throws IOException {
-		String fileNames = Utils.listFilesInDir(dir);
+		String fileNames = Utils.listFiles(dir);
 		Utils.writeStringToFile(fileNames, new File(CONFIG_DIR + "/filesInUserFiles.txt"));
 	}
 	
-	private String getFileList() throws IOException {
-		return Utils.fileToString(new File(CONFIG_DIR + "/filesInUserFiles.txt"));
+	/**
+	 * @return A String version of the file src/main/resources/configuration/filesInUserFiles.txt
+	 */
+	public String getFileList() {
+		return fileList;
+	}
+	
+	/**
+	 * @return all the Users files
+	 */
+	public File[] getUserFilesDirFiles() {
+		return new File(USER_FILES_DIR).listFiles();
+	}
+	
+	public boolean isIllegalFileName(String fileName) {
+		switch(fileName) {
+		case "combinedFiles.txt": return true;
+			default: return false;
+		}
 	}
 
 	/**
@@ -137,43 +158,25 @@ public class Database {
 	 * @return if the sourceFolder has changed
 	 * @throws IOException 
 	 */
-	private boolean checkForChangesInDir(File mainDir, File previousMainDir) throws IOException {
-		String mainDirFiles = Utils.listFilesInDir(mainDir);
-		String previousDirFiles = Utils.fileToString(previousMainDir);
+	private boolean checkForChangesInDir(File mainDir) throws IOException {
+		String mainDirFiles = Utils.listFilesInDir(mainDir); // Might need to change
 		
-		return mainDirFiles.equals(previousDirFiles);
-	}
-	
-	/**
-	 * @param fileName : the file that your checking if its used by the program
-	 * @return if the fileName is reserved for the program
-	 */
-	@Deprecated
-	private boolean checkForIllegalFile(String fileName) { // Will prob have to add a couple to the list :) // Lol this not needed if I use directory not name
-		switch(fileName) {
-		case "/combinedFiles.txt": return true; // uhhhhh idk man prob remove this
-		case CONFIG_DIR + "/filesInSourceFolder.txt": return true;
-		case CONFIG_DIR + "/fileViewStorage.json": return true;
-		default: return false;
-		}
-	}
-
-	/**
-	 * @return all the Users files
-	 */
-	public File[] getUserFilesDirFiles() {
-		return new File(USER_FILES_DIR).listFiles();
+		return mainDirFiles.equals(fileList);
 	}
 	
 	/**
 	 * In general this is how you would request to receive the data inside of a file
 	 * 
-	 * @param fileName
+	 * @param fileDir
 	 * @param fileDataType
 	 * @return a String containing the fileData
 	 */
-	public String getFileData(String fileName, String fileDataType) {
-		FileDataType fdt = fileViewStorage.get(fileName);
+	public String getFileData(String fileDir, String fileDataType) {
+//		String[] fileDirs = fileList.split(",");
+//		System.out.println(fileViewStorage.get(fileDirs[1]).get(FileDataType.REAL_FILE));
+		
+		FileDataType fdt = fileViewStorage.get(fileDir);
+//		System.out.println(fdt.get(FileDataType.PRETTY_FILE));
 		if(fileDataType.equals(FileDataType.PRETTY_FILE) && fdt.hasPrettyFile()) {
 			return fdt.get(fileDataType);
 		}else if(fileDataType.equals(FileDataType.PRETTY_FILE) && !fdt.hasPrettyFile()) {
