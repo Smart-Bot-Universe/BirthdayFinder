@@ -6,10 +6,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+import edu.kentlake.computerscience.database.Database;
 
 /**
  * 
@@ -73,6 +75,15 @@ public class Utils {
 		else return dir.mkdir();
 	}
 	
+	public static boolean makeFile(File file) {
+		try {
+			return file.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
 	public static String convertStringToJson(String data, String objectName, String[] variableNames) {
 		String json = "{";
 		
@@ -96,8 +107,27 @@ public class Utils {
 		return json;
 	}
 	
-	public static void addFileToList(File file) {
-		
+	public static void addFile(File file, String folderDir) {
+		addFile(file, folderDir, 0);
+	}
+	
+	/**
+	 * @author Ruvim Slyusar
+	 * 
+	 * I feel like a genius
+	 */
+	private static void addFile(File file, String folderDir, int count) {
+		Path src = Path.of(file.toURI());
+		Path dest = (count == 0) ? Path.of(new File(folderDir + "/" + file.getName()).toURI()) :
+								Path.of(new File(folderDir + "/" + file.getName() + "(" + count + ")").toURI());
+		try {
+			Files.copy(src, dest);
+		}catch (FileAlreadyExistsException e) {
+			addFile(file, folderDir, ++count);
+			return;
+		}catch(IOException io) {
+			io.printStackTrace();
+		}
 	}
 	
 	public static String getFileName(String fileName) {
@@ -123,7 +153,7 @@ public class Utils {
 	
 	/**
 	 * 
-	 * @return A String containing all the files (not folders) inside of a directory separated by comas.
+	 * @return A String containing all the files (not folders and not files inside subDirectories) inside of a directory separated by comas.
 	 */
 	public static String listFilesInDir(File dir) {
 		String filesInDir = "";
@@ -137,6 +167,7 @@ public class Utils {
 	/**
 	 * @param directory.
 	 * @return A String with all the files (not folders and/or subfolders) that are separated by comas.
+	 * 			Including the files inside subDirectories of the dir
 	 */
 	public static String listFiles(File dir) {
 		String files = "";

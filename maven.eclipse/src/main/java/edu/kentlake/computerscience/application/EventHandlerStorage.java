@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 
 public class EventHandlerStorage {
@@ -11,8 +12,10 @@ public class EventHandlerStorage {
 	public static final String MAKE_FOLDER = "MakeFolder";
 	public static final String IMPORT = "Import";
 	public static final String EXPORT = "Export";
+	public static final String REMOVE = "Remove";
+	public static final String ADD_FILE = "AddFile";
 
-	private Map<String, EventHandler<ActionEvent>> storage;
+	private static Map<String, EventHandler<ActionEvent>> storage;
 	
 	public EventHandlerStorage() {
 		storage = new HashMap<>();
@@ -22,7 +25,7 @@ public class EventHandlerStorage {
 		return storage.get(eventName);
 	}
 	
-	public void put(String eventName, EventHandler<ActionEvent> event) {
+	public static void put(String eventName, EventHandler<ActionEvent> event) {
 		storage.put(eventName, event);
 	}
 }

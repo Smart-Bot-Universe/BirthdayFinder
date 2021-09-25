@@ -17,6 +17,8 @@ import edu.kentlake.computerscience.utilities.Utils;
 
 /**
  * @author Ruvim Slyusar
+ * 
+ * 	This is the database... duh
  */
 public class Database {
 	public static final String RESOURCES_DIR = "src/main/resources";
@@ -34,14 +36,28 @@ public class Database {
 		try {
 			students = new ArrayList<>();
 			fileList = Utils.fileToString(new File(CONFIG_DIR + "/filesInUserFiles.txt"));
+			fileList = fileList.trim();
 			
-//			fileViewStorage = new Gson().fromJson(Utils.fileToString(new File(CONFIG_DIR + "/fileViewStorage.json")), FileViewStorage.class);
-			fileViewStorage = new FileViewStorage();
+			String fileViewStorageJson = Utils.fileToString(new File(CONFIG_DIR + "/fileViewStorage.json"));
+			if(fileViewStorageJson.isBlank()) fileViewStorage = new FileViewStorage();
+			else fileViewStorage = new Gson().fromJson(fileViewStorageJson , FileViewStorage.class);
+//			fileViewStorage = new FileViewStorage();
 			
-			restoreDatabase();
-//			if(checkForChangesInDir(new File(USER_FILES_DIR))) { restoreDatabase(); }
+			check();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void check() {
+//		System.out.println("Checking for changes");
+		if(!checkForChangesInDir(new File(USER_FILES_DIR))) { 
+			try {
+//				System.out.println("doing restoreDatabase");
+				restoreDatabase();
+			}catch(IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -129,6 +145,7 @@ public class Database {
 	private void updateFileList(File dir) throws IOException {
 		String fileNames = Utils.listFiles(dir);
 		Utils.writeStringToFile(fileNames, new File(CONFIG_DIR + "/filesInUserFiles.txt"));
+		fileList = fileNames;
 	}
 	
 	/**
@@ -158,9 +175,10 @@ public class Database {
 	 * @return if the sourceFolder has changed
 	 * @throws IOException 
 	 */
-	private boolean checkForChangesInDir(File mainDir) throws IOException {
-		String mainDirFiles = Utils.listFilesInDir(mainDir); // Might need to change
-		
+	private boolean checkForChangesInDir(File mainDir) {
+		String mainDirFiles = Utils.listFiles(mainDir); // Might need to change
+//		System.out.println(mainDirFiles);
+//		System.out.println(fileList);
 		return mainDirFiles.equals(fileList);
 	}
 	
@@ -184,5 +202,19 @@ public class Database {
 			return fdt.get(FileDataType.REAL_FILE);
 		}
 		return fdt.get(fileDataType);
+	}
+	
+	public void removeFileData(String fileDir) {
+		try {
+			File file = new File(fileDir);
+			fileViewStorage.removeFileData(file.getPath());
+			Utils.writeStringToFile(new Gson().toJson(fileViewStorage), new File(CONFIG_DIR + "/fileViewStorage.json")); // Idk if needed tbh
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public FileDataType getFileDataType(String fileDir) {
+		return fileViewStorage.get(fileDir);
 	}
 }
